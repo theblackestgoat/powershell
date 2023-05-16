@@ -883,4 +883,28 @@ $lines -join "`n" | Out-File -Encoding ascii -NoNewline C:\Users\roycr\Desktop\h
 # One line command
 set-content -value @("3A8EBEB41000296D44EDDF39A505F7E0","E0B834074D39255F6B527173F022CC3E","72FEFE3E181218A441B4A3A8D4BA2405") -path $Home\Desktop\find-hash.txt
 
+#generate a hash for each individual file in the directory
+foreach($file in Get-ChildItem $directory -Recurse){
+    if (-not $file.PSIsContainer){#Calculate hash only if Path is a File
+        $hash = (Get-FileHash -Path $file.PSPath -Algorithm MD5);
+        #Supported Hash Algorithm SHA1 | SHA256 | SHA384 | SHA512 | MACTripleDES | MD5 | RIPEMD160
+        #Write-Output $hash
+        $hash | select -First 10         
+    }
+}
 
+#look for the hashes in the output
+#foreach($line in Env:\USERPROFILE\Desktop\find-hash.txt){
+#    if (line in $hash){
+#        Write-Output "There is a match!"
+#    }
+#    else{"The directory seems clean."
+#    }
+#}
+
+         if ($hash -ne ($bad_hash)){
+        Write-Output = "Match not found: $hash"}
+    else{($hash -match ($bad_hash))
+        Write-Output = "Match not found: $hash"
+    }
+}   
