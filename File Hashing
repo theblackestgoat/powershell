@@ -1,3 +1,29 @@
+<#
+
+.Synopsis
+Identify files that correspond with one or more hashes. 
+
+.Description
+Users specifiy which directory to scan. 
+Program creates a hash for each individual file in a folder.
+Hashes are compared to known hashes.
+If a known hash is discovered in the specified folder, 
+the program will send that name and full filepath of the match.
+
+.Parameter Directory
+Specify the directory to scan.
+
+.Parameter Hash
+Specify which hashing algorithm to use.
+
+.Example Directory
+C:\Program Files
+
+.Example Hash
+SHA1 | SHA256 | SHA384 | SHA512 | MACTripleDES | MD5 | RIPEMD160
+
+#> 
+
 # One line command
 #This creates a .txt on the desktop with these hash values
 set-content -value @("3A8EBEB41000296D44EDDF39A505F7E0","E0B834074D39255F6B527173F022CC3E","72FEFE3E181218A441B4A3A8D4BA2405") -path  Env:\USERPROFILE\Desktop\find-hash.txt
@@ -8,32 +34,52 @@ $directory = Read-Host{
 ("1: Program Files")
 ("2: Users")
 ("3: Temp")
+("4: Windows Logs")
 ("Default")
 }
 switch($directory){
     1 {$directory = 'C:\Program Files'}
     2 {$directory = 'C:\Users'}
     3 {$directory = 'C:\temp'}
+    4 {$directory = 'C:\Windows\Logs'}
     default {$directory = 'C:\Windows\System32'}
     }
 write-host "you've chosen" $directory
 
-#generate a hash for each individual file in the directory
-foreach($file in Get-ChildItem $directory -Recurse){
-    if (-not $file.PSIsContainer){#Calculate hashonly if Path is a File
-        $hash = (Get-FileHash -Path $file.PSPath -Algorithm MD5);
-        #Supported Hash Algorithm SHA1 | SHA256 | SHA384 | SHA512 | MACTripleDES | MD5 | RIPEMD160
-        #Write-Output $hash       
+#get the user to select which algorithm to use
+$algorithm = Read-Host{
+("Please select an algorithm (MD5 is the default)")
+("1: SHA1")
+("2: SHA256")
+("3: SHA384")
+("4: SHA512")
+("5: MACTripleDES")
+("6: MD5")
+("7: RIPEMD160")
+("Default")
+}
+switch($algorithm){
+    1 {$algorithm = 'SHA1'}
+    2 {$algorithm = 'SHA256'}
+    3 {$algorithm = 'SHA384'}
+    4 {$algorithm = 'SHA512'}
+    5 {$algorithm = 'MACTripleDES'}
+    6 {$algorithm = 'MD5'}
+    7 {$algorithm = 'RIPEMD160'}
+    default {$algorithm = 'MD5'}
+    }
+write-host "you've chosen" $directory
+write-host "you've chosen" $algorithm "hashing algorithm"
+
+
+$bad_hash = (Get-Content -Path Env:\USERPROFILE\Desktop\find-hash.txt)
+$hashes = (Get-ChildItem -Path $directory -Recurse | Get-FileHash -Algorithm MD5)
+
+foreach($hash in $hashes){
+    if ($hash -match ($bad_hash)){
+        Write-Output = "Match found: $hash"; break}
+    else{($hash -ne ($bad_hash))
+        Write-Output = "Match not found: $hash"
     }
 }
 
-#look for the hashes in the output
-foreach($line in Env:\USERPROFILE\Desktop\find-hash.txt){
-    if (line in $hash){
-        Write-Output "There is a match!"
-    }
-    else{"The directory seems clean."
-    }
-}
-
-        
