@@ -1,0 +1,12 @@
+Task 1)
+	View the service descriptions of Windows services and find service descriptions that don’t begin with the letter 'T
+	
+Task 2)
+	View the service descriptions of Windows services and find service descriptions that contain parentheses.
+
+Task 3)
+	View the service descriptions of Windows services and find service descriptions that don’t end with a period.
+
+Get-Service | Where-Object {$_.DisplayName -notmatch "^T"} | 
+Where-Object {$_.DisplayName -match '[(,)]'} | 
+Where-Object {$_.DisplayName -notmatch '[.$]'}
