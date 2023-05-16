@@ -875,3 +875,12 @@ $lines = Get-ChildItem -File -Path $directory -Recurse | Get-FileHash -Algorithm
     $hash = $_.Hash.ToLower()
     "$hash $unixPath"}
 $lines -join "`n" | Out-File -Encoding ascii -NoNewline C:\Users\roycr\Desktop\hashes.txt
+
+
+
+
+
+# One line command
+set-content -value @("3A8EBEB41000296D44EDDF39A505F7E0","E0B834074D39255F6B527173F022CC3E","72FEFE3E181218A441B4A3A8D4BA2405") -path $Home\Desktop\find-hash.txt
+
+
