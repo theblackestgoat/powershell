@@ -847,7 +847,11 @@ Scenario
     View the service descriptions of Windows services and find service descriptions that don’t begin with the letter 'T'
     View the service descriptions of Windows services and find service descriptions that contain parentheses.
     View the service descriptions of Windows services and find service descriptions that don’t end with a period.
-
+*** correct answer ***
+Get-CimInstance Win32_Service | Select-Object Description | Where-Object {$_.Description -cnotmatch "^T"}
+Get-CimInstance Win32_Service | Select-Object Description | Where-Object {$_.Description -match "\("}
+Get-CimInstance Win32_Service | Select-Object Description | Where-Object {$_.Description -notmatch "[\.]$"}
+*** wrong answer***
 Get-Service | Where-Object {$_.DisplayName -notmatch "^T"} | Where-Object {$_.DisplayName -match '[(,)]'} | Where-Object {$_.DisplayName -notmatch '[.$]'} 
 
 
@@ -862,7 +866,12 @@ For example, if you were given the following inputs:
 
 	
 	
-
+Get-ChildItem -path $directory -Recurse | ForEach-Object 
+foreach ($item in (Get-ChildItem -path $directory -Recurse)) Get-FileHash .\ $item | Format-list 
 	
 
-
+$lines = Get-ChildItem -File -Path $directory -Recurse | Get-FileHash -Algorithm MD5 | % {
+    $unixPath = $_.Path -replace '\\','/'
+    $hash = $_.Hash.ToLower()
+    "$hash $unixPath"}
+$lines -join "`n" | Out-File -Encoding ascii -NoNewline C:\Users\roycr\Desktop\hashes.txt
