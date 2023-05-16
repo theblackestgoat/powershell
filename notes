@@ -1,12 +1,868 @@
-Task 1)
-	View the service descriptions of Windows services and find service descriptions that don’t begin with the letter 'T
+
+_____stack stuff_____
+
+Stack name
+Cracraft_Ops_stations
+
+password
+my vta password
+
+domain
+10.50.255.254
+
+URL
+http://pkg-cache.bbh.cyberschool.army.mil:3142
+
+password
+password
+
+user name
+student
+
+view only password
+view_only_password
+
+vnc password
+password
+
+_____getting into the box_____
+
+launch remmina
+connect to the ip of the box, listed under "instances" on VTA
+use the creds above
+
+_____powershell_____
+
+integrated scripting language
+allows you to automate processes
+use acli
+object-oriented 
+.net framework
+commands are called cmdlets, verb-noun structure
+output objects
+words are always singular (process vs processes)
+internal and external commands
+	output will be a string object
+
 	
-Task 2)
-	View the service descriptions of Windows services and find service descriptions that contain parentheses.
 
-Task 3)
-	View the service descriptions of Windows services and find service descriptions that don’t end with a period.
+get all verbs that start with get
+Get-Command -Verb Get 
+internal commands will give a string that is specific to that type
+tasklist (an external command)
+(tasklist).gettyp()
+	returns an array of strings
+(Get-Processes).GetType(0)
 
-Get-Service | Where-Object {$_.DisplayName -notmatch "^T"} | 
-Where-Object {$_.DisplayName -match '[(,)]'} | 
-Where-Object {$_.DisplayName -notmatch '[.$]'}
+command
+workflow
+cmdlet
+function
+
+structure
+verb noun parameter arguement parameter arguement 
+Get-EventLog -logName Security -ComputerName File_server -verbose
+
+when executing a command, ps looks for the thing in the following order
+(use Get-Command to confirm the order)
+associative arrays
+alias - function - cmdlet - path environment commands 
+
+help system
+Get-Help
+	returns info about the help sustem
+Update-Help -Force -ErrorAction SilentlyContinue
+	reaches out to the internet and returns all the updated Help files
+Get-Help -Name Get-Command
+	returns help file on the get-command command
+	syntax shows parameter sets, which can be used together and which cannot
+	[xxx] optional to include
+	[] can have multiple items
+	<> expecting a value
+	[<>] expecting a value but it's optional
+	{} does something?
+	| passes info into another thing
+	
+parameters
+get-help about_parameters
+some params have a default value
+like true/false, if they're there the thing does a thing
+every cmdlet has common prams (get-help about_commonparameters)
+	debug, errorvariable, etc. 
+
+look for commands not called command
+get-help -name *log* 
+	searches all help files and regturns everything with "log" in the name
+get-help "event log"	
+	you can search for strings (looks for name of command, then looks in synopsis)
+get-help get-process -Examples
+	shows examples of how to do the thing (found in -Full but only shows the examples)
+get-help about_*
+	shows help files not tied to cmdlets
+get-help get-process -online
+	brings you to the internet solution for the thing
+get-help get-process -showwindow
+	brings the help file up in a new .txt-like window
+get-childitem - -path c:\Windows -Filter *.exe -Resurse -name 
+	looks for all the .exe files, only returning the name of the file, "recurse" makes it boolean, 
+	
+Get-Alias
+	shows all available aliases for current session
+$Alias:dir
+associative arrays
+	shows the alias for dir
+$Alias: -Definition
+	
+create and remove alias
+Set-Alias -Name edit -Value notepad.exe
+	makes it so when you type "edit", notepad comes up
+set-alias edit notepad.exe
+	does the same thing because of the positions of the parameters and arguements
+new-alias -name edit -value notepad.exe
+	will error out because we already have an alias named edit
+set-alias will not tell you if there is already an alias with that name
+remove-item -literalpath alias:edit
+	removes the alias named edit
+	(closing the session also removes any alias you make)
+	psv6.0+ has remove-alias
+
+add permanent aliases to powershell profile to make them populate all the time
+get-help about_profiles
+	learn about profiles and editing startup scripts
+	
+ps providers
+	provide access to data that we normally wouldnt have
+	get-PSProvider
+ps drives
+	shows sources of data
+	you can add dives
+	get-PSdrive
+		name, space used, freespace, provider, root
+	new ps drive
+		new-PSDrive -Name HKU -PSProvider Registry -Root HKEY_USER
+		new-PSPdrive -Name Z -PSProvider FileSystem _root \\live.sysinternals.com\tools Start-Service -Name WebClient
+			lets you access files from a website as if it were a normal internal PS Drive
+			
+Variables
+data container
+represented by text strings preceded by $
+get-help about_variables
+get-childitem env:
+$env:USERPROFILE
+create environmental varables
+$env:var = "Hello"
+delete variables (use del and the variable)
+del $env:var
+create user defined variables
+Get-Variables
+	shows all current variables, environmental (automatic, you cant change these) and preference (you can change these)
+	Get-ChildItem Variable (this does the same thing)
+	$x = 10 (most common, easiest method to assign)
+New-Variable
+Set-Item
+Test-Path variable:x
+	tests to see if the variable "x" esists - True/False
+Remove-Variable x
+$x = '' (sets x to a null value but holds path in variable drive)
+close ps session to remove variables
+create multiple variables
+$strng, $number, $cmdlet = 'hello', 17, (get-process | where{}$_.name -like "svchost"})
+	(this doesnt run the get-process every time, it only hold the info from the first time and recalls it)
+
+'' vs ""
+$var1 = "jon"
+"" evaluates variable
+write-host "hello $var1"
+	hello jon
+'' does not evaluate varuable
+write-host 'hello $var1'
+	hello $var1
+
+automatic variables
+get-help about_automatic_variables
+
+force type for variable assignment
+
+what datatype
+("Hello").GetType().name
+	string
+("77.564").GetType().name
+	Double
+("0xff").GetType().name
+	Int32
+
+get user input
+$var = read-host; [int32]$var
+32.1
+(returns the integer value, "32")
+
+[int]5.5
+6 (gives closest integer value)
+
+[float]5.5
+5.5
+
+[int]0xff
+255
+
+rounds to the nearest even integer, 1.5 and 2.5 both round to 2
+
+	
+_____scripting with powershell_____
+
+functions
+
+allow you to creat a block of code by calling its name
+must start with the word "function"
+try to name it like a cmdlet( noun verb)
+
+function test-it {
+	'Hello world!"
+	}
+
+function test-me($value) {
+    if ($value -gt 3) {
+        Write-Host -ForegroundColor Green "True"
+        }
+    else {
+        Write-Host -ForegroundColor Red "False"
+        }
+	}
+	
+_____arrays_____
+
+$x = Get-Process
+
+$x -is [array]
+	will give you t/f to check if x is an array
+	
+$a = "Hello"
+$x -is [array]
+	false
+	
+$x -is [array]
+$x.Count
+	gives you the count of objects in the array
+	
+$array = 1,2,3,4,5
+	calling this will print all the numbers on separate lines
+	
+$array = 1..5
+	this will build the same array
+	
+polymorphic arrays
+	multiple data types can be stored in the same array
+	
+$array2 = "World", "hello", 5, 10, (get-date)
+	prints strings, numbers, and the date
+	
+$array2[3].GetType()
+	third index is a number and it will tell you that it is a string
+	
+$array3 = @()
+	creates an empty array and will function as such
+	
+$array3 += "hello"
+$array3 += "you"
+
+$array3
+hello
+you
+
+accessing data outside the range of an array will return a null-value, not an error
+
+arrays without variables
+(-4..10)[4]
+0
+0 is in index position 4
+
+(-4..10)[4,6,8]
+index positions:
+0
+associative arrays
+2
+4
+
+$array2[1..$array2.length]
+gives you index position 1 until the end
+
+jagged arrays
+$jagarray = "joe", "jim", "jan", (1, ('apple', 'pear'), 3), "jay"
+$jagarray[0]
+joe
+$jagarray[3]
+1
+apple
+pear
+3
+$jagarray[3][0]
+1
+$jagarray[3][1]
+apple
+pear
+$jagarray[3][1][0]
+apple
+
+add an array on top of jag
+$jagarray += @(4,5,6)
+this will add these as elements
+$jagarray += , @(4,5,6)
+this will keep this array in tact
+
+length is tied to the number of arrays within the array with 0 being the initial array
+
+string arrays
+'_' * 20
+this will give you: 
+_____________________
+'Boom' * 5
+BoomBoomBoomBoomBoom
+"Boom `n" * 4
+Boom
+Boom
+Boom
+Boom
+(still a single string)
+
+@("Boom `n" * 4)
+Boom
+
+Boom
+
+Boom
+
+Boom
+
+(this turns the booms into an array)
+
+, 0 * 3
+(the comma is a shortcut of using the @() symbols)
+0
+0
+0
+
+multidimentional array
+$TargetingArray = @(
+	@(3.1, 2.5, "Tehran),
+	@(3.7, 2.7, "Bejing),
+	@(3.0, 2.4, "Pyongyang),
+)
+each element is an array
+
+$TargetingArray[0]
+3.1
+2.5
+Tehran
+
+foreach ($line in $targetingarray){
+	if($line[2] -eq 'Bejing')
+		write-output $line
+	}
+}
+this is a single dimentional array
+
+[string[,]$rank2 = [string[,]]::New(3,2)
+$rank2.rank
+$rank2.length
+$rank2[0,0] = 'a'
+$rank2[0,1] = 'b'
+$rank2[1,0] = 'c'
+$rank2[1,1] = 'd'
+$rank2[2,0] = 'e'
+$rank2[2,1] = 'f'
+a	b
+c	d
+e	f
+
+
+hash tables
+associative arrays
+store key-value pairs
+$hex = @{}
+creates an empty hash table (dictionary)
+to add elements:
+$hex.White = '#FFFFFF'
+$hex
+gives you name and value in two columns
+or
+$hex['Black'] = '0x000000'
+
+$hex.keys
+shows all the keys
+likewise with .values
+
+$hex.green = 'SuperGreen"
+this will change the value (not the key)
+
+
+input output
+get input from user and save it to a variable
+$name = Read-host -Prompt "Please give me a name"
+write-host "you entered" $name
+
+$num = Read-host -Prompt "Please give me a number"
+write-host "you entered" $num.getType()
+will return a number as a string
+system.string
+
+write-host
+write-output
+appear to do the same things
+write-host just prints to the screen
+write-output writes to the pipleine and can pass with operators
+
+function user-host{
+	write-host "guest"
+	write-host "Admininstrator"
+	write-host "cloudbase-init"
+	write-host "Admin"
+}
+function user-output{
+	write-output "guest"
+	write-output "Admininstrator"
+	write-output "cloudbase-init"
+	write-output "Admin"
+}
+
+user-host | sort 
+user-output | sort
+
+
+output to a file
+
+get-localuser | out-file - filepath .\user.txt
+get-childitem -name user*
+get-content.\user.txt
+prints out the information about the local user and formats it
+collection of objects, each is a line
+get-content can be for the content of a text file, a function, or whatever
+
+$User = (get-localuser).name
+add-content - path .\user.txt -value $User
+get-content .\user.txt
+shows all the previous information in addition to just the names
+
+one-liner for the above
+get-content - path .\user.txt | add-content-path .\user.txt
+
+set-content
+this will overwrite the old content
+set-content -path .\user.txt -value (get-localuser).name
+now it will only show the names because the file has been overwritten
+
+csv files
+create objects in rows, character separated lists, character values
+
+get-process -name svchost | export-csv -path C:\Users\Student\svchost.csv 
+get-content svchost
+spits out everythin in "" separated by ,
+very ugly
+
+import csv
+create a table-like object from a csv file
+using the csv we just made
+import-csv -name (the name of the thing we just made)
+
+branching if elseif else
+
+$x = 11
+if($x -gt 10){'$x is larger than 10"}
+(need to use "" so that it's evaluated)
+
+$x = 5
+if($x = 5){Write-host "Condition is true - x is equal to 5" -foregroundcolor Blue}
+
+case-insensitive (used for comparing strings)
+
+if("ABC" ieq ""Abc){
+	write-host "condition met"
+	}
+else {
+	write host "condition not met"
+	}
+	
+condition met (because ps is case insensitive)
+
+if("ABC" ceq ""Abc){
+	write-host "condition met"
+	}
+else {
+	write host "condition not met"
+	}
+
+condition not met (ceq makes it case sensitive)
+
+$x = 2
+if($x -eq 5){
+	write-host "bob"
+}
+elseif($x -eq 4){
+	write-host "sue"
+}
+elseif($x -eq 2){
+	write-host "tom"
+}
+elseif($x -eq 1){
+	write-host "mary"
+}
+else {
+	"who am i?"
+}
+
+
+$num = (get-rangom -minimum 0 -maximum 10)
+if($num -lt 5){
+	"$num is less than 5"
+}
+elseif($num eq 5){
+	"$num is exactly 5"
+}
+else($num gt 5){
+	"$num is greater than 5"
+}
+
+
+
+$OS = 'c'
+switch ($OS) {
+	a { write-host "macOS"}
+	b { write-host "linux"}
+	c { write-hsot 'windows"}
+	}
+	
+$choice = read-host("pick between 1 and 3")
+switch($choice){
+	1 {"ps is best"}
+	2 {"basb best"}
+	3 {"python"}
+	default {"scripting is bad"}
+}
+
+
+switch(10)
+{
+	(1+9){
+		"correct"
+	}
+	(1+10){
+		"incorrect"
+	}
+	(11-1){
+		"correct again"
+	}
+	(1-11){
+		"very incorrect"
+	}
+}
+
+
+(for this case $_ is the same as $num because its hold the last value in the pipe)
+$num = (get-random -minimum 0 -maximum 10)
+switch(num){
+	{$_ -le 3}{ "some number from 1 to 3"}
+	6 {"it is the number 6"}
+	{(($_ -ge 6) -and ($_ -le 9))}{"some number from 7 to 9"}
+	{$num -gt 2} {"it's greater than 2"}
+	{(($num -ge 5)) -and ($_ le 8)0} {"some number from 5 to 8"}
+	{$num -le 7} {"it is less than 7"}
+}
+
+
+
+___for each loops___
+foreach-object
+
+$nums = 1,2,3,4,5
+$nums | foreach-object {$_* 2}
+2
+4
+6
+8
+10
+
+$list = 'a', 'b', 'c', 'd', 'e'
+$lsit | foreach-object { $_.toupper() }
+A
+B
+C
+D
+E
+
+list = 'a', 'b', 'c', 'd', 'e'
+$lsit | % { $_.toupper() }
+A
+B
+C
+D
+E
+(% is the alias for foreach-object)
+
+$nums = 1,2,3,4,5
+$sum = 0
+$nums | % { $sum += $_ }
+$sum
+15
+
+get-process | select-object -first 10 | foreach-object { $_.name } | foreach-object { $_.toUpper() }
+
+get-childitem | foreach-object { $_.length / 1KB }
+
+1..10 | foreach-object { $_ * 10 }
+
+get-process | foreach-object { $_.name + "is runnning process with ProcessID" + $_.ID }
+
+foreach ($item in (get-childitem -path C:\)) {$item.name}
+$item is an arbitrary variable name here
+
+Get-childitem C:\ | foreach-object {$_.name}
+	does the same thing
+	this might take a lot longer to run if the list is very long
+
+foreach($num in 1.5){$num * 2}
+2
+4
+6
+8
+10
+
+$teams = "tigers", "pistons", "red wings", "lions"
+foreach($team in $teams){"Detroit $team"}
+detroit tigers
+detroit pistons
+detroit red wings
+detroit lions
+
+$chars = 'mario', 'man', 'ghosts and ghouls', 'scope'
+measure-command { $chars | foreach { "super $_}}).totalmilliseconds
+
+
+$num = 0
+while ($num -lt 3){
+	$num
+	$num++
+	}
+0
+1
+2
+
+$var = ""
+while($var -ne "marines"){
+	$var = reat-host "which branch of the mil is best?"
+}
+(this will ask until you type "marines")
+
+$ans = Read-host - prompt 'which char is best"
+while(($ans = read-host -promt which char is best) -ne "hulk")
+	switch($ans){
+	"hulk"{"correct"}
+	"flsh"{"wrong"; break}
+	"ironman"{"wrong again"; break}
+	"superman"{"very wrong"; break}
+	default{"its the hulk"; break}
+	}
+}
+
+
+
+
+
+_____helpful commands_____
+
+Command alias   Cmdlet name     Description of command
+
+%               ForEach-Object  		Performs an operation against each item in a collection of input objects.
+?               Where-Object    		Selects objects from a collection based on their property values.
+ac              Add-Content     		Appends content, such as words or data, to a file.
+asnp            Add-PSSnapIn    		Adds one or more Windows PowerShell snap-ins to the current session.
+cat             Get-Content    			Gets the contents of a file.
+cd		Set-Location			Sets the current working location to a specified location.
+chdir		Set-Location			Sets the current working location to a specified location.
+clc		Clear-Content			Deletes the contents of an item, but does not delete the item.
+clear		Clear-Host			Clears the display in the host program.
+clhy		Clear-History			Deletes entries from the command history.
+cli		Clear-Item			Deletes the contents of an item, but does not delete the item.
+clp		Clear-ItemProperty		Deletes the value of a property but does not delete the property.
+cls		Clear-Host			Clears the display in the host program.
+clv		Clear-Variable			Deletes the value of a variable.
+cnsn		Connect-PSSession		Reconnects to disconnected sessions
+compare		Compare-Object			Compares two sets of objects.
+copy		Copy-Item			Copies an item from one location to another.
+cp		Copy-Item			Copies an item from one location to another.
+cpi		Copy-Item			Copies an item from one location to another.
+cpp		Copy-ItemProperty		Copies a property and value from a specified location to another location.
+curl		Invoke-WebRequest		Gets content from a webpage on the Internet.
+cvpa		Convert-Path			Converts a path from a Windows PowerShell path to a Windows PowerShell provider path.
+dbp		Disable-PSBreakpoint		Disables the breakpoints in the current console.
+del		Remove-Item			Deletes files and folders.
+diff		Compare-Object			Compares two sets of objects.
+dir		Get-ChildItem			Gets the files and folders in a file system drive.
+dnsn		Disconnect-PSSession		Disconnects from a session.
+ebp		Enable-PSBreakpoint		Enables the breakpoints in the current console.
+echo		Write-Output			Sends the specified objects to the next command in the pipeline. If the command is the last command in the pipeline, the objects are displayed in the console.
+epal		Export-Alias			Exports information about currently defined aliases to a file.
+epcsv		Export-Csv			Converts objects into a series of comma-separated (CSV) strings and saves the strings in a CSV file.			
+epsn		Export-PSSession		Imports commands from another session and saves them in a Windows PowerShell module.
+erase		Remove-Item			Deletes files and folders.
+etsn		Enter-PSSession			Starts an interactive session with a remote computer.
+exsn		Exit-PSSession			Ends an interactive session with a remote computer.
+fc		Format-Custom			Uses a customized view to format the output.
+fl		Format-List			Formats the output as a list of properties in which each property appears on a new line.
+foreach		ForEach-Object			Performs an operation against each item in a collection of input objects.
+ft		Format-Table			Formats the output as a table.
+fw		Format-Wide			Formats objects as a wide table that displays only one property of each object.
+gal		Get-Alias			Gets the aliases for the current session.
+gbp		Get-PSBreakpoint		Gets the breakpoints that are set in the current session.
+gc		Get-Content			Gets the contents of a file.
+gci		Get-ChildItem			Gets the files and folders in a file system drive.
+gcm		Get-Command			Gets all commands. available in current session, not ALL the commands that exit
+gcs		Get-PSCallStack			Displays the current call stack.
+gdr		Get-PSDrive			Gets drives in the current session.
+ghy		Get-History			Gets a list of the commands entered during the current session.
+gi		Get-Item			Gets files and folders.
+gjb		Get-Job				Gets Windows PowerShell background jobs that are running in the current session.
+gl		Get-Location			Gets information about the current working location or a location stack.
+gm		Get-Member			Gets the properties and methods of objects.
+gmo		Get-Module			Gets the modules that have been imported or that can be imported into the current session.
+gp		Get-ItemProperty		Gets the properties of a specified item.
+gps		Get-Process			Gets the processes that are running on the local computer or a remote computer.
+group		Group-Object			Groups objects that contain the same value for specified properties.
+gsn		Get-PSSession			Gets the Windows PowerShell sessions on local and remote computers.
+gsnp		Get-PSSnapIn			Gets the Windows PowerShell snap-ins on the computer.
+gsv		Get-Service			Gets the services on a local or remote computer.
+gu		Get-Unique			Returns unique items from a sorted list.
+gv		Get-Variable			Gets the variables in the current console.
+gwmi		Get-WmiObject			Gets instances of Windows Management Instrumentation (WMI) classes or information about the available classes.
+h		Get-History			Gets a list of the commands entered during the current session.
+history		Get-History			Gets a list of the commands entered during the current session.
+icm		Invoke-Command			Runs commands on local and remote computers.
+iex		Invoke-Expression		Runs commands or expressions on the local computer.
+ihy		Invoke-History			Runs commands from the session history.
+ii		Invoke-Item			Performs the default action on the specified item.
+ipal		Import-Alias			Imports an alias list from a file.
+ipcsv		Import-Csv			Creates table-like custom objects from the items in a CSV file.
+ipmo		Import-Module			Adds modules to the current session.
+ipsn		Import-PSSes sion		Imports commands from another session into the current session.
+irm		Invoke-RestMethod		Sends an HTTP or HTTPS request to a RESTful web service.
+ise		powershell_ise.exe		Explains how to use the PowerShell_ISE.exe command-line tool.
+iwmi		Invoke-WMIMethod		Calls Windows Management Instrumentation (WMI) methods.
+iwr		Invoke-WebRequest		Gets content from a web page on the Internet.
+kill		Stop-Process			Stops one or more running processes.
+lp		Out-Printer			Sends output to a printer.
+ls		Get-ChildItem			Gets the files and folders in a file system drive.
+man		help				Displays information about Windows PowerShell commands and concepts.
+md		mkdir				Creates a new item.
+measure		Measure-Object			Calculates the numeric properties of objects, and the characters, words, and lines in string objects, such as files of text.
+mi		Move-Item			Moves an item from one location to another.
+mount		New-PSDrive			Creates temporary and persistent mapped network drives.
+move		Move-Item			Moves an item from one location to another.
+mp		Move-ItemProperty		Moves a property from one location to another.
+mv		Move-Item			Moves an item from one location to another.
+nal		New-Alias			Creates a new alias.
+ndr		New-PSDrive			Creates temporary and persistent mapped network drives.
+ni		New-Item			Creates a new item.
+nmo		New-Module			Creates a new dynamic module that exists only in memory.
+npssc		New-PSSessionConfigurationFile	Creates a file that defines a session configuration.
+nsn		New-PSSession			Creates a persistent connection to a local or remote computer.
+nv		New-Variable			Creates a new variable.
+ogv		Out-GridView			Sends output to an interactive table in a separate window.
+oh		Out-Host			Sends output to the command line.
+popd		Pop-Location			Changes the current location to the location most recently pushed to the stack. You can pop the location from the default stack or from a stack that you create by using the Push-Location cmdlet.
+ps		Get-Process			Gets the processes that are running on the local computer or a remote computer.
+pushd		Push-Location			Adds the current location to the top of a location stack.
+pwd		Get-Location			Gets information about the current working location or a location stack.
+r		Invoke-History			Runs commands from the session history.
+rbp		Remove-PSBreakpoint		Deletes breakpoints from the current console.
+rcjb		Receive-Job			Gets the results of the Windows PowerShell background jobs in the current session.
+rcsn		Receive-PSSession		Gets results of commands in disconnected sessions.
+rd		Remove-Item			Deletes files and folders.
+rdr		Remove-PSDrive			Deletes temporary Windows PowerShell drives and disconnects mapped network drives.
+ren		Rename-Item			Renames an item in a Windows PowerShell provider namespace.
+ri		Remove-Item			Deletes files and folders.
+rjb		Remove-Job			Deletes a Windows PowerShell background job.
+rm		Remove-Item			Deletes files and folders.
+rmdir		Remove-Item			Deletes files and folders.
+rmo		Remove-Module			Removes modules from the current session.
+rni		Rename-Item			Renames an item in a Windows PowerShell provider namespace.
+rnp		Rename-ItemProperty		Renames a property of an item.
+rp		Remove-ItemProperty		Deletes the property and its value from an item.http://rkeithhill.wordpress.com/2010/09/21/make-ps1exewrapper/
+rsn		Remove-PSSession		Closes one or more Windows PowerShell sessions (PSSessions).
+rsnp		Remove-PSSnapin			Removes Windows PowerShell snap-ins from the current session.
+rujb		Resume-Job			Restarts a suspended job
+rv		Remove-Variable			Deletes a variable and its value.
+rvpa		Resolve-Path			Resolves the wildcard characters in a path, and displays the path contents.
+rwmi		Remove-WMIObject		Deletes an instance of an existing Windows Management Instrumentation (WMI) class.
+sajb		Start-Job			Starts a Windows PowerShell background job.
+sal		Set-Alias			Creates or changes an alias (alternate name) for a cmdlet or other command element in the current Windows PowerShell session.
+saps		Start-Process			Starts one or more processes on the local computer.
+sasv		Start-Service			Starts one or more stopped services.
+sbp		Set-PSBreakpoint		Sets a breakpoint on a line, command, or variable.
+sc		Set-Content			Replaces the contents of a file with contents that you specify.
+select		Select-Object			Selects objects or object properties.
+set		Set-Variable			Sets the value of a variable. Creates the variable if one with the requested name does not exist.
+shcm		Show-Command			Creates Windows PowerShell commands in a graphical command window.
+si		Set-Item			Changes the value of an item to the valu
+
+
+
+_____exercises_____
+
+
+1.
+Scenario
+You are tasked with creating a consent banner in PowerShell.
+Read the help documentation for PowerShell profiles and use the profile that will affect all users of Powershell on the machine.
+
+Deliverable
+Your consent banner needs to contain:
+    The current date
+    	 Write-Host "The current date and time is: $((Get-Date).ToString())"
+    The username of the current user
+	    Write-Host "Current user name: $((whoami).Split('\')[1])"
+    The machine name of the current machine
+    	Write-Host "Current machine name:" $env:COMPUTERNAME
+    Finally, save off all PowerShell commands run by the user and do not alert the user to this behavior.
+
+my current profile location
+	C:\Users\student\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1
+	
+	create a profile for allUsersAllHosts 
+	New-Item -Path $PROFILE.AllUsersAllHosts -Type File -Force
+	
+https://lazyadmin.nl/powershell/powershell-profile/	
+	test-path $PROFILE.AllUsersAllHosts
+New-Item -Path $PROFILE.AllUsersAllHosts -Type File -Force
+
+Write-Host "Current date and time: $((Get-Date).ToString())"
+Write-Host "Current user name: $((whoami).Split('\')[1])"
+Write-Host "Current machine name:" $env:COMPUTERNAME
+Start-Transcript -path $HOME/powershellhistory.txt | Out-Null
+
+# $env:USERNAME could be used instead of whoami
+
+
+2. 
+Scenario
+    You have been tasked to check systems on your network for malicous activity. Specifically, you will need to check Windows services for signs of malicious activity. Atackers have been know to steal code from the internet and make careless oversights when modifying code. They have been known to be careless with service descriptions.
+
+    View the service descriptions of Windows services and find service descriptions that don’t begin with the letter 'T'
+    View the service descriptions of Windows services and find service descriptions that contain parentheses.
+    View the service descriptions of Windows services and find service descriptions that don’t end with a period.
+
+Get-Service | Where-Object {$_.DisplayName -notmatch "^T"} | Where-Object {$_.DisplayName -match '[(,)]'} | Where-Object {$_.DisplayName -notmatch '[.$]'} 
+
+
+3.
+Scenario
+
+You are part of a team of software developers tasked to write the program for remote Agents to make mission reports into. Specifically, YOU are tasked to generate a password array that will receive the Agent’s input, place it into a jagged array, and then return them to the larger reporting system.
+
+The format of the jagged array will be as such. Agents will provide key words, which must be in placed into the inner arrays. Each array will end in an integer, which must be placed into the array as a type of integer. The final inner array may or may not end with a integer value. When the Agent enters an empty string, this will signal the end of their input, and the finalized jagged array should be returned.
+
+For example, if you were given the following inputs:
+
+	
+	
+
+	
+
+
