@@ -1,0 +1,517 @@
+#PowerShell Exercises
+
+
+<# Variables
+Skills Assessed
+    Environment Variables
+    Variable Expansion
+
+Scenario
+You are tasked with creating a consent banner in PowerShell.
+    Read the help documentation for PowerShell profiles and use the profile that will affect all users of Powershell on the machine.
+
+Deliverable
+Your consent banner needs to contain:
+    The current date
+    The username of the current user
+    The machine name of the current machine
+    Finally, save off all PowerShell commands run by the user and do not alert the user to this behavior.
+#>
+#Create profile for all users
+New-Item -ItemType File -Path $PROFILE.AllUsersAllHosts -Force
+#Navifate into the profile to modify it
+cd $PROFILE.AllUsersAllHosts
+#update the profile with the following environmental variable solutions
+Get-Date
+Write-Host "User $ENV:USERNAME is being monitored on $ENV:COMPUTERNAME"
+Start-Transcript | Out-nill
+
+
+<# Malicious Services
+Skills Assessed
+    Output Formatting
+    RegEx
+
+Scenario
+    You have been tasked to check systems on your network for malicous activity. Specifically, you will need to check Windows services for signs of malicious activity. Atackers have been know to steal code from the internet and make careless oversights when modifying code. They have been known to be careless with service descriptions.
+
+Task 1): View the service descriptions of Windows services and find service descriptions that don’t begin with the letter 'T'
+Task 2): View the service descriptions of Windows services and find service descriptions that contain parentheses.
+Task 3): View the service descriptions of Windows services and find service descriptions that don’t end with a period.
+
+Deliverables
+    The Powershell code that accomplishes each of the 3 tasks.
+Hint
+    The Get-Service cmdlet does not contain a property called Description. However, Cim commands do have an instance command that contains this data.
+#>
+#Service descriptions tht don't begin with a 'T'
+Get-CimInstance Win32_Service | Where-Object Description -NotMatch '^T' | Select-Object name, Description
+#Service decriptions that contain parentheses
+Get-CimInstance Win32_Service | Where-Object Description -like '*(*)*' | Select-Object name, Description | Format-Table -Wrap
+#or
+Get-CimInstance Win32_Service | Where-Object Description -Match '\(' | Select-Object name, Description | Format-Table -Wrap
+#service descriptions that don't end in a period
+Get-CimInstance Win32_Service | Where-Object Description -NotLike '.$'
+
+
+<# Multi Array
+Skills Assessed
+    Arrays
+    User IO
+    Looping
+    Branching
+
+Scenario
+You are part of a team of software developers tasked to write the program for remote Agents to make mission reports into. Specifically, YOU are tasked to generate a password array that will receive the Agent’s input, place it into a jagged array, and then return them to the larger reporting system.
+The format of the jagged array will be as such. Agents will provide key words, which must be in placed into the inner arrays. Each array will end in an integer, which must be placed into the array as a type of integer. The final inner array may or may not end with a integer value. When the Agent enters an empty string, this will signal the end of their input, and the finalized jagged array should be returned.
+
+For example, if you were given the following inputs:
+Example: Submitted Values:
+"Longing", "rusted", "furnace", "daybreak", "17", "benign", "9", "homecoming", "1", "freight car", ""
+
+The returned jagged array would be formatted as such:
+Example: Returned Value:
+(("Longing", "rusted", "furnace", "daybreak", 17), ("benign", 9), ("homecoming", 1), ("freight car"))
+#>
+function get-pass {
+    $jagg = @()
+    $arr = @()
+    while ($true) {
+        $word = Read-Host "Provide input"
+        if ($word.Length -eq 0) {
+            if ($arr.Count -gt 0) {
+                $jagg +=, $arr
+            }
+            return $jagg
+        }
+        elseif ($word -match '^[\d]+$') { #regex solution
+        #elseif ($word -as [int]) {       #`-as` operator solution
+            $arr += [int]$word
+            $jagg +=, $arr
+            $arr = @()
+        }
+        else {
+            $arr += $word
+        }
+    }
+}
+$answer = get-pass
+write-host "All items in jagged Array"
+$answer
+write-host "Number of subarrays: $(($answer).count)"
+
+
+<# Groups by User
+Skills Assessed
+    Looping
+    Output Formatting
+    File IO
+    User IO
+
+Scenario
+    You have been tasked to collect user information on a unit’s server. The supported unit’s commander is worried that a malicious user could have added an account to the server. Write a Powershell script that will display groups and the users assigned to them.
+
+Task 1): Connect to the Workstation(1,2,3) and install the RSAT_Install file on the Public Desktop.
+	This may have already been done by the instructor. Check by running Get-Aduser and check for error message or addtional parameters
+Task 2): Write a PowerShell Script to retrieve a list of all domain groups on the system and list the members of each.
+
+Deliverables
+    A script that lists each group and the user that is a member
+    For each group, format your output as follows
+        The Group Name
+        A line divider, such as ====================================
+        A new line character
+
+Hints:
+# This command will list all users in AD
+Get-Aduser -Filter *
+# This command will list all groups in AD
+Get-AdGroup -Filter *
+# This command will list members of the group supplied in <groupname>
+Get-AdgroupMember -Identity <groupname>
+#>
+foreach ( $group in ((get-adgroup -filter *).name) ) {
+    Write-Output "$group"
+    Write-Output "=============================="
+    (get-adgroupmember $group).name
+    Write-Output "`n"
+
+
+<# Hashtag Compare Files?
+Skills Assessed
+    File Hashing
+    Output Formatting
+    File IO
+    Looping
+    Branching
+
+Scenario
+
+You have been tasked to identify files on a system that match corresponding one or more MD5 hashes. Write a PowerShell script that when executed hashes each individual file in a given directory, and its subdirectories, and compares each hash against a list of known MD5 hashes. Send to standard out the name, with full file path, of any matching files.
+    The script’s saved filename will use the standard naming convention Microsoft uses for cmdlets.
+    The script will accept at least two parameters that dynamically modify the script rather than having to statically enter values.
+    The Directory parameter will accept multiple values with 'C:\Windows\System32' being the default value.
+    The Hash parameter will accept multiple values and will be a mandatory parameter.
+    Create a functioning Comment Based Help compatible with Get-Help, and properly document the script using the following keywords:
+        Synopsis
+        Description
+        Parameter (x2)
+        Example (x2)
+
+    After you have a working script, go back through and suppress error messages that are generated by the different cmdlets you will use. Know why each is generating their errors.
+    MD5 hashes to search for:
+        3A8EBEB41000296D44EDDF39A505F7E0
+        E0B834074D39255F6B527173F022CC3E
+        72FEFE3E181218A441B4A3A8D4BA2405
+        Command to autogenerate a file with these hashes and place it on the desktop:
+
+# One line command
+set-content -value @("3A8EBEB41000296D44EDDF39A505F7E0","E0B834074D39255F6B527173F022CC3E","72FEFE3E181218A441B4A3A8D4BA2405") -path $Home\Desktop\find-hash.txt
+#>
+Param (
+    [Parameter(Mandatory=$true,
+    HelpMessage = "Enter one or more hashes to find, separated by commas")]
+    [string[]]
+    $Hash,
+    [Parameter(Mandatory=$false)]
+    [string[]]
+    $Directory = "C:\Windows\System32"
+)
+Get-ChildItem -Path $Directory -Recurse -ErrorAction SilentlyContinue | `
+Get-FileHash -Algorithm MD5 -ErrorAction SilentlyContinue | `
+Where-Object {$_.Hash in $Hash} | `
+ForEach-Object {$_.Path}
+
+
+<# NETwork connection information, STAT!
+Skills Assessed
+    Function Parameters
+    Comments Based Help
+    Output Formatting
+    Custom Objects
+    Branching
+    Advanced Functions
+
+Scenario
+
+You have been tasked to identify connections to potentially questionable remote servers, that are identifiable by either their IP address or port number. Write a PowerShell script that when executed, checks for remote connections to specific IP(s) OR Ports. If the connection(s) exists, format the the output as shown below.
+    The script’s saved filename will use the standard naming convention Microsoft uses for cmdlets.
+    The script will accept at least two parameters that dynamically modify the script rather than having to statically enter values. The RemoteIP and RemotePort parameters will each accept multiple values with no defaults values.
+    The script should exit if both parameters are used at the same time. Use one or the other, but not both.
+    Create a functioning Comment Based Help compatible with Get-Help, and properly document the script using the following keywords:
+
+        Synopsis
+        Description
+        Parameter (x2)
+        Example (x2)
+    IP address and Ports to be able to search for:
+    Note: This is host-dependent. Use the Get-NetTCPConnection cmdlet and chose values from RemoteAddress and RemotePort for testing.
+
+Deliverable
+Faux Netstat Deliverable
+
+Additional Challenge
+If you notice from the image above, there are blank lines between the process name and the connection info. This is because we are pulling data from two different objects, and the script from the above example processed those objects one at a time. As a result, we cannot format the information as a single table. But, what if we wanted to use a table instead of a list for the output? One of the easiest ways to do this is to create a collection of custom objects, with each custom object containing the information you are after. When you are complete send the collection of objects down the pipeline, sort the collection by the name of the process, and then send the sorted data to the format cmdlet you desire. In the below image, you can see multiple TCP connections in one table.
+#>
+Param (
+    [Parameter(Mandatory=$false)]
+    [string[]]
+    $RemoteIP,
+    [Parameter(Mandatory=$false)]
+    [uint16[]] # unsigned integer 0 to 65535
+    $RemotePort
+)
+# Answer using if statement
+if (($RemoteIP) -and ($RemotePort)) {
+    "Please provide either remote IP or ports; not both."
+} elseif ($RemoteIP) {
+    Get-NetTCPConnection | Where-Object -Property RemoteAddress -in $RemoteIP | `
+    ForEach-Object {
+        Write-Output "Process Name: $(Get-Process -id $_.OwningProcess | Select-Object -ExpandProperty Name)"
+        $_ | Format-List RemoteAddress, RemotePort, State, CreationTime
+    }
+} elseif ($RemoteIP) {
+    Get-NetTCPConnection | Where-Object -Property in $RemotePort | `
+    ForEach-Object {
+        Write-Output "Process Name: $(get-process -id $_.OwningProcess | Select-Object -ExpandProperty Name)"
+        $_ | Format-List RemoteAddress, RemotePort, State, CreationTime
+    }
+} else {
+    "Please provide remote ip address or ports, separated by commas. utilize the '-RemoteIP' or '-RemotePort'"
+}
+
+
+<# Malicious Hosts
+Skills Assessed
+    File IO
+    Regex
+    Looping
+    Branching
+    Arrays
+
+Scenario
+You have been tasked to check systems on your network for malicous activity. Specifically, you will need to check and report the changes to any system hosts file.
+Exercise
+    Create a PowerShell script that reads the hosts file on the File-Server and checks for IP addresses. If the script finds any IPs, collect them and display them in a list that is broken down by their address class.
+
+Deliverable
+    A PowerShell script that collects IP addresses from the hosts file on the File-Server and displays them in a list that is broken down by their network address class.
+    The list of IPs sorted by their network class
+#>
+$All_IPs = @()
+
+#create arrays for IP types
+$A = @()
+$B = @()
+$C = @()
+
+#Create my Ip Pattern
+$IP = '([1-9]{1,3}\.)([0-9]{1,3}\.){2}(\d{1,3})'
+
+#Read the hosts file
+$h = Get-Content C:\WINDOWS\System32\drivers\etc\hosts
+
+#Iterate over each IP in ALL_IPs array, split off the first octet, convert to an int, then determine if A, B, or C Class
+foreach($item in $All_IPs) {
+    if([int]$item.split(".")[0] -gt 0 -and [int]$item.split(".")[0] -lt 128){
+        $A += $item
+    }
+    elseif([int]$item.split(".")[0] -gt 127 -and [int]$item.split(".")[0] -lt 192){
+        $A += $item
+    }
+    else{
+        $C += $item
+    }
+}
+#write out each IP under a header with the correct IP class
+Write-Host "Class A"
+Write-Host "======="
+$A | Sort-Object
+Write-Host "`nClass B"
+Write-Host "======="
+$B | Sort-Object
+Write-Host "`nClass C"
+Write-Host "======="
+$C | Sort-Object
+
+
+<# User Scrub
+Skills Assessed
+    File IO
+    String Manipulation
+    Looping
+
+Scenario
+You have been tasked to scrub the list of users in Active Directory based on which users have a signed AUP form. The users with a valid AUP form are listed in a file named HR.txt.
+    Grab the list of users in the HR.txt from the "HR Share" on the file-server.
+    Gather a list of users in Active Directory and compare that against the list of users in the HR.txt file.
+    Provide a list of users that have AD accounts that are not listed on the HR.txt file
+
+Deliverable
+    A PowerShell script that compares the users in the HR.txt file against the users with AD accounts
+    The list of users who need to be scrubbed from AD
+
+Hints
+# ssh from the WIN-OPS to the assigned Workstion[1|2|3]
+ssh army\cbtcuser@10.50.X.X
+# map the location of the hr file on the File-Server to the Workstion[1|2|3]
+New-PSDrive -Name Z -PSProvider FileSystem -Root \\file-server\C$\HR
+# Copy the hr file down to the workstation
+Copy-Item Z:\host.txt C:\Users\CBTCUser\hr.txt
+Copy the list of Active Directory Users to a file on the Workstation[1|2|3]
+<figure this out on your own>
+# exit powershell, then exit the ssh session to return to the WIN-OPS
+# scp the file down from the Workstion[1|2|3] to the WIN-OPS
+scp army\CBTCuser@10.50.X.X:C:\users\cbtcuser\hr.txt .
+#>
+#Map the HR Share
+New-PSDrive -Name Z -PSProvider FileSystem -Root \\file-server\"HR Share"
+#Copy the file locally to work with it
+Copy-Item -Path Z:\HR.txt -Destination .
+#Create an array to store the modified names from the HR.txt
+$HRarray = @()
+Foreach($HRname in (Get-Content .\HR.txt)) {
+    $fname = $HRname.replace(" ", "").split(',')[1]; $lname = $HRname.split(',')[0]; $HRarray += ($fnam + "." $lname)
+}
+#Check if AD user exists in the HR Array
+foreach($adname in ((get-aduser -filter *).name)){
+    if ($adname -notin $HRarray){
+        $adname
+    }
+}
+
+
+<# Survey Function
+Skills Assessed
+    Basic Functions
+    Output Formatting
+
+Scenario
+You have been directed by your mission commander to develop code that enables enumerating the current operating system state of Windows systems for forensic purposes. This code will be applicable for both defensive missions and offensive missions.
+Exercise
+
+Write multiple functions using only Powershell Cmdlets to enumerate the following components of your system. Your functions should enumerate the following information and display it in a READABLE manner by using format commands:
+    System date and time
+        Format the date to display as 4 digit year-2 digit month-2 digit day@2 digit hour:2 digit minite:2 digit second
+    System name
+    Users and groups (You can use the code from the Users by Groups Practical Exercise)
+    Logged on users
+    Running processes
+        Sort these by Process ID and filter everything out except Process Names, PIDs, Parent Process ID, and where the processes are running from)
+    Services and their states
+        Make sure to select the process id and where it is running from. Also sort the services by their current state.
+    Network information
+        Select Listening and Established network sockets and Network Adapter Info
+    System configuration information
+    Mapped drives
+    Plug and play devices
+    Shared resources
+    Scheduled tasks
+#>
+Function My-Date{
+    Get-Date -Format yyyy-MM-dd@hh:mm:ss
+}
+Function Enum-Users{
+    foreach($group in (Get-LocalGroup).name){
+        Write-Output "$group"
+        Write-Output "======================"
+        (Get-LocalGroupMember -Group Administrators).name
+        Write-Output "`n"
+    }
+}
+Function Get_loggedOnUsers{allow-uri-read
+    (Get-CimInstance Win32_ComputerSystem).username
+}
+Function Enum-Procs{
+    Get-Process | Sort-Object -Property ID | Format-Table name, ID, SI, Path
+}
+Function Enum-Services{
+    Get-CimInstance Win32_Service | Format-Table -Property Name, State, Pathname
+}
+Funcion Enum-Network{
+    Get-NetAdapter | Format-List
+    Get-NetTCPConnection
+}
+Function Enum-Config{
+    Get-CimInstance Win32_OperatingSystem | select *
+}
+Function Enum-Drives{
+    Get-PSDrive
+}
+Function Enum-PnP{
+    Get-PnpDevice | Format-Table -Property Status, Class, Friendlyname
+}
+Function Enum-Shares{
+    Get-SmbShare
+}
+Function Enum-Tasks{
+    Get-ScheduledTask | Format-List
+}
+
+
+<# Create Survey
+Skills Assessed
+    Functions
+    Branching with Switch Statement
+
+Scenario
+You have been directed by your mission commander to develop code that enumerates the current operating state of Windows systems for forensic purposes. This code will be applicable for both defensive missions and offensive missions.
+Exercise
+    Create a survey function using only Powershell Cmdlets that enumerates your system. Your survey function should either encompass or call your previous functions created in pe_create_survey_functions. This function should present a menu that allows the user to run individual functions, or run all of your functions.
+    For the purposes of this exercise, the survey function must contain a switch statement. The switch statement should allow for choosing a specific function to execute, and it should also allow for running all enumeration functions.
+#>
+
+Function Get-Enum{
+    Function Create-Header{
+        param(
+                $param1
+            )
+        Write-Output "$param1 on $ENV:COMPUTERNAME"
+        Write-Output "=========================="
+        Write-Output "`n"
+    }
+    Function Create-Footer{
+        Write-Output "--------------------------"
+    }
+    Function My-Date{
+        Get-Date -Format yyyy-MM-dd@hh:mm:s
+    }
+    Function Enum-Users{
+        foreach($group in (Get-LocalGroup).name){
+            Write-Output "$group"
+            Write-Output "======================"
+            (Get-LocalGroupMember -Group Administrators).name
+            Write-Output "`n"
+        }
+    }
+    Function Get_loggedOnUsers{allow-uri-read
+        (Get-CimInstance Win32_ComputerSystem).username
+    }
+    Function Enum-Procs{
+        Get-Process | Sort-Object -Property ID | Format-Table name, ID, SI, Path
+    }
+    Function Enum-Services{
+        Get-CimInstance Win32_Service | Format-Table -Property Name, State, Pathname
+    }
+    Funcion Enum-Network{
+        Get-NetAdapter | Format-List
+        Get-NetTCPConnection
+    }
+    Function Enum-Config{
+        Get-CimInstance Win32_OperatingSystem | select *
+    }
+    Function Enum-Drives{
+        Get-PSDrive
+    }
+    Function Enum-PnP{
+        Get-PnpDevice | Format-Table -Property Status, Class, Friendlyname
+    }
+    Function Enum-Shares{
+        Get-SmbShare
+    }
+    Function Enum-Tasks{
+        Get-ScheduledTask | Format-List
+    }
+    $choice = Read-Host("Please choose a number : 1 for Groups & Associated Users,
+                        2 for Logged on Users,
+                        3 for Processes,
+                        4 for Services,
+                        5 for Network Info,
+                        6 for System config,
+                        7 for PS Drives,
+                        8 for PnP Devices,
+                        9 for Shares,
+                        10 for Schtasks,
+                        or None for all")
+    Switch($choice){
+        1 {My-Date; Create-Header Users; Enum-Users}
+        2 {My-Date; Create-Header LoggedOnUsers; Enum-LoggedOnUsers}
+        3 {My-Date; Create-Header Processes; Enum-Procs}
+        4 {My-Date; Create-Header Services; Enum-Services}
+        5 {My-Date; Create-Header Network; Enum-Network}
+        6 {My-Date; Create-Header Config; Enum-Config}
+        7 {My-Date; Create-Header Drives; Enum-Drives}
+        8 {My-Date; Create-Header PnP; Enum-PnP}
+        9 {My-Date; Create-Header Shares; Enum-Shares}
+        10 {My-Date; Create-Header Tasks; Enum-Tasks}
+        default {My-Date; Create-Header Users; Enum-Users; Create-Footer; 
+                Create-Header LoggedOnUsers; Enum-LoggedOnUsers; Create-Footer; 
+                Create-Header Processes; Enum-Processes; Create-Footer; 
+                Create-Header Services; Enum-Services; Create-Footer; 
+                Create-Header Network; Enum-Network; Create-Footer; 
+                Create-Header Config; Enum-Config; Create-Footer; 
+                Create-Header Drives; Enum-Drives; Create-Footer;
+                Create-Header PnP; Enum-PnP; Create-Footer;
+                Create-Header Shares; Enum-Shares; Create-Footer;
+                Create-Header Tasks; Enum-Tasks; Create-Footer
+                }
+    }
+}
+
+
+
+
+
+
+
+
