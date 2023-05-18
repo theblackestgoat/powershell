@@ -10,10 +10,15 @@ function q2($arr,$rows,$cols,$key) {
        and return the value at column index 9 of the same row.
        Return -1 if the key is not found.
     #>
+    foreach ($row in $arr){
+        if ($row[0] -eq $key){
+            return $row[9]}
+        else{
+        }
+    }
     return "-1"
-
-
 }
+
 function q3 {
     <# In a loop, prompt the user to enter positive integers one at time.
        Stop when the user enters a -1. Return the maximum positive
